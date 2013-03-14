@@ -1,3 +1,7 @@
+# comment 1
+# comment 1.2
+
+# comment 2
 class SquareRootExpansion
   def initialize( n )
     @n = n

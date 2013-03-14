@@ -1,3 +1,4 @@
+
 module Sudoku ( SudokuSquare,
                 SudokuPuzzle, 
                 initSudoku,
@@ -19,74 +20,23 @@ module Sudoku ( SudokuSquare,
 
 import Data.Array
 import Data.IntSet (IntSet)
-import Data.Set (Set)
 import Data.List
 import Data.Ord
 import qualified Data.IntSet as IntSet
-import qualified Data.Set as Set
 
-class Possible p where 
-  impossible :: p a
-  
-  Impossible | Unconstrained | Known a | CouldBe Set a deriving (Show,Eq) 
-
-
-
-combinePossible :: (Eq a) => Possible a -> Possible a -> Possible a
-combinePossible Impossible x = Impossible
-combinePossible x Impossible = Impossible
-combinePossible Unconstrained x = x
-combinePossible x Unconstrained = x
-combinePossible (Known x) (Known y) | x == y = Known x
-combinePossible (Known x) (CouldBe s) | x `Set.member` s = Known x
-                                      | otherwise = Impossible
-combinePossible (CouldBe s) (Known x) | x `Set.member` s = Known x
-                                      | otherwise = Impossible
-
-reducePossibilities :: (Eq a) => [Possible a] -> Possible a
-reducePossibilities p = foldl combinePossible Unconstrained p
-
-
-instance Functor Possible where
-  fmap f Impossible = Impossible
-  fmap f Unconstrained = Unconstrained
-  fmap f Known n = Known (f n)
-  fmap f CouldBe s = CouldBe (Set.fmap f s)
-  (<$) x = Known x
-  
-instance Applicative Possible where
-  pure n = Known n
-  (<*>) Impossible x = Impossible 
-  (<*>) Unconstrained x = x
-  (<*>) (Known f) x = fmap f x
-  (<*>) (CouldBe s) x = reducePossibilities $ map (<$>x) $ Set.elems s
-  
-instance Monad Possible where
-  return a = Known a
-  Impossible >>= _ = Impossible
-  Unconstrained >>= _ = Unconstrained 
-  (Known n) >>= f = f n
-  (CouldBe s) >>= f = reducePossibilities $ map (<$>x) $ Set.elems s
-  
-instance MonadPlus Possible where
-  mzero = Unconstrained
-  mplus a b = combinePossible a b
-
-data (Ix i) => MagicPuzzle i 
-
-type SudokuSquare = Solvable Int
+data SudokuSquare = Known Int | CouldBe IntSet deriving (Show,Eq)
 
 type SudokuPuzzle = Array (Int,Int) SudokuSquare
 
-sudokuValues :: Set Int
-sudokuValues = Set.fromList [1..9]
+sudokuValues :: IntSet
+sudokuValues = IntSet.fromList [1..9]
 
 initSquare :: Int -> SudokuSquare
 initSquare 0 = CouldBe sudokuValues
 initSquare n = Known n
 
-squareFromSet :: Set -> SudokuSquare
-squareFromSet s | Set.size s == 1 = Known $ head $ IntSet.toList s
+squareFromSet :: IntSet -> SudokuSquare
+squareFromSet s | IntSet.size s == 1 = Known $ head $ IntSet.toList s
                 | otherwise = CouldBe s
 
 initSudoku :: [[Int]] -> SudokuPuzzle
